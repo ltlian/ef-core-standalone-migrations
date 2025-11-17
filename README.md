@@ -12,7 +12,7 @@ In this structure:
 Not addressed in this structure:
 
 - The application still references `DbContext` and its `DbSet`s. For further separation to prevent the application from being able to directly interact with these database types, separate projects would be made to hide these behind repositories and DTOs.
-- The domain models (`Artist.cs` and `Album.cs`) are tailored to MSSQL to some extent, mainly by their `int` primary keys. Creating another layer of separation by further abstracting these models out into a completely agnostic contract which `MusicLibrary.Persistence.csproj` imports is possible, but is not useful until you need it.
+- The domain models ([Artist.cs](./src/MusicLibrary.Persistence/Models/Artist.cs) and [Album.cs](./src/MusicLibrary.Persistence/Models/Album.cs)) are tailored to MSSQL to some extent, mainly by their `int` primary keys. Creating another layer of separation by further abstracting these models out into a completely agnostic contract which `MusicLibrary.Persistence.csproj` imports is possible, but is not useful until you need it.
 
 This application is targeted towards an Sql Server database. For other providers (eg., PostgreSQL), an equivalent `MusicLibrary.Persistence.PostgreSQL` would be created in order to implement `IDesignTimeDbContextFactory<TContext>` with the `Npgsql.EntityFrameworkCore.PostgreSQL` provider.
 
@@ -64,11 +64,21 @@ COMMIT TRANSACTION
 
 ### Add migrations
 
-Navigate to `/src/MusicLibrary.Persistence.SqlServer` and enter the following command to create a new migration.
+Navigate to `/src/MusicLibrary.Persistence.SqlServer` and build the project:
 
 ```shell
 
-dotnet ef migrations add InitialCreate
+dotnet build
+
+```
+
+> _Running `ef migrations add` for the first time tends to fail if the project has never been built due to the design-time dependencies being needed for the tool to run, so we do it manually here._
+
+Then we can create our migration:
+
+```shell
+
+dotnet ef migrations add InitialCreate --no-build
 
 ```
 
@@ -76,11 +86,11 @@ dotnet ef migrations add InitialCreate
 
 We can then generate the migrations script.
 
-Since we just built the project in the previous step, we can skip this here.
+> _It might be tempting to skip the build again here, but doing so will ignore the migrations that were just added in the previous step._
 
 ```shell
 
-dotnet ef migrations script --no-build
+dotnet ef migrations script
 
 ```
 
@@ -102,7 +112,7 @@ Via CLI, from the `/src/MusicLibrary.Api` directory:
 
 dotnet user-secrets init
 
-dotnet user-secrets set "ConnectionStrings:DefaultConnectxion" "Server=<HOST-OR-IP>;Database=Music_Main;UID=music-api;PWD=<a_very_strong_password>;Trust Server Certificate=True;"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=<HOST-OR-IP>;Database=Music_Main;UID=music-api;PWD=<a_very_strong_password>;Trust Server Certificate=True;"
 
 ```
 
@@ -122,13 +132,21 @@ Or by right-clicking the `MusicLibrary.Api` Visual Studio and selecting `Manage 
 
 #### Verify
 
-Start the `MusicLibrary.Api` application. It should now be possible to insert and read data from the newly migrated database using the HTTP endpoints.
+Start the `MusicLibrary.Api` application, either from Visual Studio or via CLI from the `\src\MusicLibrary.Api` directory:
+
+```shell
+
+dotnet run
+
+```
+
+It should now be possible to insert and read data from the newly migrated database using the HTTP endpoints.
 
 Create new artist:
 
 ```shell
 
-curl -iX POST "https://localhost:7042/artists" -H 'Content-Type: application/json' -d '{"name":"New Artist"}'
+curl -iX POST "http://localhost:5195/artists" -H 'Content-Type: application/json' -d '{"name":"New Artist"}'
 
 ```
 
@@ -136,7 +154,7 @@ Getting all artists should return the one we just created:
 
 ```shell
 
-curl "https://localhost:7042/artists"
+curl "http://localhost:5195/artists"
 
 ```
 
@@ -174,41 +192,6 @@ Without this project, the `MusicLibrary.Persistence` project would need to manag
   - Manages migrations
 - `Microsoft.EntityFrameworkCore.SqlServer`
   - Provides `SqlServerDbContextOptionsExtensions.UseSqlServer`
-
-#### Providing a migration-specific `DbContextFactory`
-
-Normally, the migrations toolset needs to find your `DbContext` from a `IHostApplicationBuilder` or DI in the application's entry point, alongside the `Microsoft.EntityFrameworkCore.Design` package in the same project. This is the point that these two dependencies are tied together and which we would like to avoid.
-
-To make the migrations project stand-alone and to enable migration operations without depending on a startup project, we need to define a factory specific to the migrations project by implementing `IDesignTimeDbContextFactory<TContext>`. This is what the migrations toolset will use to find our `DbContext` along with the required `Microsoft.EntityFrameworkCore.Design` package.
-
-Implementing `IDesignTimeDbContextFactory<TContext>` is straightforward. Here's where we define how the `DbContext` connects to our database, which is in line with how a particular database provider defines its migrations separately. We can define configuration specific to this `DbContext`, and pass parameters to `CreateDbContext` from the command line.
-
-See <https://learn.microsoft.com/en-us/ef/core/cli/dbcontext-creation?tabs=dotnet-core-cli#from-a-design-time-factory>
-
-For a basic implementation where we are only interested in implementing `CreateDbContext` for a particular database provider, it should looks something like this:
-
-```cs
-
-using System.Reflection;
-
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-
-namespace MusicLibrary.Persistence.MsSql;
-
-public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
-{
-    public AppDbContext CreateDbContext(string[] args)
-    {
-        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-
-        optionsBuilder.UseSqlServer(b => b.MigrationsAssembly(Assembly.GetExecutingAssembly()));
-
-        return new AppDbContext(optionsBuilder.Options);
-    }
-}
-
-```
 
 #### `Microsoft.EntityFrameworkCore.Design` quirks
 
