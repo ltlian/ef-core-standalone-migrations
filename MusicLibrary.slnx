@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="src/MusicLibrary.Api/MusicLibrary.Api.csproj" Id="e542fbea-6b23-4373-b0b1-00889f2ab045" />
+  <Project Path="src/MusicLibrary.Persistence.SqlServer/MusicLibrary.Persistence.SqlServer.csproj" />
+  <Project Path="src/MusicLibrary.Persistence/MusicLibrary.Persistence.csproj" />
+</Solution>
