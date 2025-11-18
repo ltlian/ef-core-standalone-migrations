@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 using MusicLibrary.Persistence.Models;
 
-namespace MusicLibrary.Persistence.SqlServer.EntityTypeConfiguration;
+namespace MusicLibrary.Persistence.EntityTypeConfiguration;
 
 public class ArtistTypeConfiguration : IEntityTypeConfiguration<Artist>
 {

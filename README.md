@@ -94,6 +94,45 @@ dotnet ef migrations script
 
 ```
 
+If everything goes well, we should see a script similar to this:
+
+```sql
+
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+GO
+
+BEGIN TRANSACTION;
+CREATE TABLE [Artists] (
+    [Id] int NOT NULL IDENTITY,
+    [Name] nvarchar(max) NOT NULL,
+    CONSTRAINT [PK_Artists] PRIMARY KEY ([Id])
+);
+
+CREATE TABLE [Albums] (
+    [Id] int NOT NULL IDENTITY,
+    [Title] nvarchar(max) NOT NULL,
+    [ArtistId] int NOT NULL,
+    CONSTRAINT [PK_Albums] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_Albums_Artists_ArtistId] FOREIGN KEY ([ArtistId]) REFERENCES [Artists] ([Id]) ON DELETE CASCADE
+);
+
+CREATE INDEX [IX_Albums_ArtistId] ON [Albums] ([ArtistId]);
+
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20251118002529_InitialCreate', N'10.0.0');
+
+COMMIT;
+GO
+
+```
+
 This script can be run in the newly created `Music_Main` database. The database should now be in a state usable by the API.
 
 > _By default, the database state is not validated on startup. If the database and application are not in the same migration state, errors will not manifest until an invalid query is made._
@@ -164,12 +203,18 @@ curl "http://localhost:5195/artists"
 
 ### Class library: MusicLibrary.Persistence.csproj
 
-Only defines the DbContext and its models. This is a database-agnostic implementation and should work for any provider.
+Defines the DbContext, its models, and how they map to the database. This is a database-agnostic implementation and should work for any provider.
+
+A key dependency in this project is the call to `modelBuilder.ApplyConfigurationsFromAssembly(typeof(MusicDbContext).Assembly);` from [/src/MusicLibrary.Persistence/MusicDbContext.cs](/src/MusicLibrary.Persistence/MusicDbContext.cs).
+
+For other means of registering entity type configurations, see Microsoft's docs: <https://learn.microsoft.com/en-us/ef/core/modeling/>
 
 **Package dependencies**:
 
 - `Microsoft.EntityFrameworkCore`
   - Provides  `Microsoft.EntityFrameworkCore.DbContext`
+- `Microsoft.EntityFrameworkCore.Relational`
+  - Provides additional entity type configuration methods, such as `ToTable`. Only needed if the project does not reference `Microsoft.EntityFrameworkCore.Design`.
 
 ### Class library: MusicLibrary.Persistence.MsSql.csproj
 
