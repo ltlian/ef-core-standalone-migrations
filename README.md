@@ -137,7 +137,7 @@ GO
 
 This script can be run in the newly created `Music_Main` database. The database should now be in a state usable by the API.
 
-> _By default, the database state is not validated on startup. If the database and application are not in the same migration state, errors will not manifest until an invalid query is made._
+> _By default, the database state is not validated on startup. If the database and application are not in the same migration state, errors will not manifest until an invalid query is made. Since our runtime application no longer has a reference to the migrations assembly, it is also not able to compare its state during startup._
 
 For more notes on applying migrations using this approach, check out [/src/MusicLibrary.Persistence.SqlServer/README.md](/src/MusicLibrary.Persistence.SqlServer/README.md)
 
