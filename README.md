@@ -62,6 +62,8 @@ COMMIT TRANSACTION
 
 > _This user will not have the necessary permissions to perform migrations which is usually what we want. If we intend to run automatic migrations, we either need to give this user the `db_owner` role, or create a separate migrations user._
 
+It's technically possible to make user creation part of the migrations, like in the [add-user-migration](https://github.com/ltlian/ef-core-standalone-migrations/tree/add-user-migration) branch, but this introduces a number of challenges for securely providing the initial password.
+
 ### Add migrations
 
 Navigate to `/src/MusicLibrary.Persistence.SqlServer` and build the project:
