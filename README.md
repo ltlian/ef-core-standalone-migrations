@@ -155,7 +155,7 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=<HOST-OR-I
 
 ```
 
-Or by right-clicking the `MusicLibrary.Api` Visual Studio and selecting `Manage User Secrets`:
+Or by right-clicking the `MusicLibrary.Api` project in Visual Studio and selecting `Manage User Secrets`:
 
 ```json
 
