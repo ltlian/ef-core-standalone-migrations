@@ -12,7 +12,7 @@ In this structure:
 Not addressed in this structure:
 
 - The application still references `DbContext` and its `DbSet`s. For further separation to prevent the application from being able to directly interact with these database types, separate projects would be made to hide these behind repositories and DTOs.
-- The domain models ([Artist.cs](./src/MusicLibrary.Persistence/Models/Artist.cs) and [Album.cs](./src/MusicLibrary.Persistence/Models/Album.cs)) are tailored to MSSQL to some extent, mainly by their `int` primary keys. Creating another layer of separation by further abstracting these models out into a completely agnostic contract which `MusicLibrary.Persistence.csproj` imports is possible, but is not useful until you need it.
+- The domain models [Artist.cs](./src/MusicLibrary.Persistence/Models/Artist.cs) and [Album.cs](./src/MusicLibrary.Persistence/Models/Album.cs) are tailored to MSSQL to some extent, mainly by their `int` primary keys. Creating another layer of separation by further abstracting these models out into a completely agnostic contract which `MusicLibrary.Persistence.csproj` imports is possible, but is not useful until you need it. The comment found in the [Album.cs](./src/MusicLibrary.Persistence/Models/Album.cs) file shows one way of handling an inherent conflict between the technical model schema and the real-world domain that it represents.
 
 This application is targeted towards an Sql Server database. For other providers (eg., PostgreSQL), an equivalent `MusicLibrary.Persistence.PostgreSQL` would be created in order to implement `IDesignTimeDbContextFactory<TContext>` with the `Npgsql.EntityFrameworkCore.PostgreSQL` provider.
 
@@ -22,7 +22,7 @@ This application is targeted towards an Sql Server database. For other providers
 
 ### Create database
 
-This is the only step needed to apply the migrations using the scripting approach.
+An empty, default database is all we need if we only intend to generate and apply the migrations using the scripting approach.
 
 The database name has no requirements aside from being what we provide to the connection string later.
 
@@ -33,7 +33,7 @@ GO
 
 ```
 
-### Create user (optional)
+### Create API user (optional)
 
 This step is only necessary if we intend to run the API.
 
@@ -183,6 +183,8 @@ dotnet run
 
 It should now be possible to insert and read data from the newly migrated database using the HTTP endpoints.
 
+Note the assumed base path of `http://localhost:5195` for the following examples. Adjust as needed.
+
 Create new artist:
 
 ```shell
@@ -191,11 +193,29 @@ curl -iX POST "http://localhost:5195/artists" -H 'Content-Type: application/json
 
 ```
 
-Getting all artists should return the one we just created:
+Get all artists and confirm the one we just created:
 
 ```shell
 
 curl "http://localhost:5195/artists"
+
+```
+
+Add albums to our artist:
+
+```shell
+
+curl -iX POST "http://localhost:5195/artists/1/albums" -H 'Content-Type: application/json' -d '{"title":"The First Album"}'
+
+curl -iX POST "http://localhost:5195/artists/1/albums" -H 'Content-Type: application/json' -d '{"title":"The Second Album"}'
+
+```
+
+Get our newly created artist's albums:
+
+```shell
+
+curl "http://localhost:5195/artists/1/albums"
 
 ```
 
