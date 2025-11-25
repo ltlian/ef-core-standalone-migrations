@@ -286,3 +286,5 @@ Only needs the domain model and how to connect to the database. Is not aware of 
     <https://github.com/dotnet/interactive/issues/3233>
 
     <https://github.com/dotnet/interactive/issues/4086>
+
+    <https://github.com/dotnet/interactive/pull/4093>
